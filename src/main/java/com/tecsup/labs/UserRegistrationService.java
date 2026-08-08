@@ -5,69 +5,101 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Servicio de registro de usuarios refactorizado.
+ * Se corrigieron vulnerabilidades, duplicidad y malas prácticas.
+ */
+public final class UserRegistrationService {
 
-public class UserRegistrationService {
+    /** Logger para registrar los eventos del servicio. */
+    private static final Logger LOGGER =
+            Logger.getLogger(UserRegistrationService.class.getName());
 
-    private static final Logger LOGGER = Logger.getLogger(UserRegistrationService.class.getName());
-    private static final int MIN_PASSWORD_LENGTH = 8;
+    /** Longitud mínima requerida para la contraseña. */
+    private static final int MIN_PASS_LENGTH = 8;
 
-    // Encapsulamiento correcto
+    /** Almacena el mensaje del último error generado. */
     private String lastErrorMessage = "";
-    // Uso de genéricos para seguridad de tipos
-    private List<String> users = new ArrayList<>();
 
+    /** Lista interna que simula una base de datos de usuarios. */
+    private final List<String> users = new ArrayList<>();
+
+    /**
+     * Constructor por defecto del servicio de registro.
+     */
     public UserRegistrationService() {
-        LOGGER.info("Servicio de registro inicializado correctamente.");
+        LOGGER.info("Servicio de registro inicializado.");
     }
 
-    public boolean registerUser(String username, String password, String email) {
-        // Prevención de NullPointerException
+    /**
+     * Intenta registrar un nuevo usuario en el sistema.
+     *
+     * @param username el nombre de usuario a registrar
+     * @param password la contraseña del usuario
+     * @param email el correo electrónico del usuario
+     * @return true si se registra exitosamente, false si falla
+     */
+    public boolean registerUser(final String username, final String password,
+                                final String email) {
         if (username == null || username.trim().isEmpty()) {
-            lastErrorMessage = "El nombre de usuario es inválido o está vacío.";
+            this.lastErrorMessage = "El usuario es inválido.";
             return false;
         }
 
-        if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
-            lastErrorMessage = "La contraseña es nula o muy corta.";
+        if (password == null || password.length() < MIN_PASS_LENGTH) {
+            this.lastErrorMessage = "La contraseña es muy corta.";
             return false;
         }
 
-        // Validación estricta de formato de correo mediante Regex
         if (email == null || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            lastErrorMessage = "El correo electrónico no tiene un formato válido.";
+            this.lastErrorMessage = "El correo es inválido.";
             return false;
         }
 
         try {
-            saveUser(username, password, email);
+            this.saveUser(username, password, email);
         } catch (IllegalArgumentException e) {
-            lastErrorMessage = "Error de negocio: " + e.getMessage();
-            LOGGER.log(Level.WARNING, "Intento de registro fallido: {0}", e.getMessage());
+            this.lastErrorMessage = "Error: " + e.getMessage();
+            LOGGER.log(Level.WARNING, "Fallo registro: {0}", e.getMessage());
             return false;
         }
 
-        LOGGER.log(Level.INFO, "Usuario registrado exitosamente: {0}", username);
+        LOGGER.log(Level.INFO, "Usuario registrado: {0}", username);
         return true;
     }
 
-    private void saveUser(String username, String password, String email) {
+    /**
+     * Guarda el usuario internamente simulando la persistencia.
+     *
+     * @param username el nombre de usuario
+     * @param password la contraseña
+     * @param email el correo electrónico
+     * @throws IllegalArgumentException si el nombre de usuario está prohibido
+     */
+    private void saveUser(final String username, final String password,
+                          final String email) {
         if ("error".equalsIgnoreCase(username)) {
-            // Se lanza una excepción específica en lugar de una genérica
-            throw new IllegalArgumentException("Nombre de usuario reservado o no permitido.");
+            throw new IllegalArgumentException("Usuario no permitido.");
         }
-        users.add(username);
-    }
-
-    // Getter para acceder al mensaje de error de forma segura
-    public String getLastErrorMessage() {
-        return lastErrorMessage;
+        this.users.add(username);
     }
 
     /**
-     * Calcula la longitud de una cadena de forma eficiente.
-     * Reemplaza al método con nombre poco claro 'x'.
+     * Devuelve el último mensaje de error registrado.
+     *
+     * @return una cadena con el mensaje de error
      */
-    public int calculateStringLength(String text) {
+    public String getLastErrorMessage() {
+        return this.lastErrorMessage;
+    }
+
+    /**
+     * Calcula la longitud de una cadena de texto de forma segura.
+     *
+     * @param text el texto a evaluar
+     * @return la cantidad de caracteres o -1 si el texto es nulo
+     */
+    public int calculateStringLength(final String text) {
         if (text == null) {
             return -1;
         }
